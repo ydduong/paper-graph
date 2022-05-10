@@ -14,6 +14,7 @@ import datetime
 def build_graph_from_title(driver: webdriver, title, sqlite: Sqlite, wait_time, log: Log):
     log.append(f'Build graph from title: {title}')
     try:
+        # 关系图链接
         res = sqlite.select_url_from_paper(title)
         if len(res) != 0:
             url = res[0][0]
@@ -58,24 +59,22 @@ def build_graph_from_title(driver: webdriver, title, sqlite: Sqlite, wait_time, 
                 # url = driver.current_url
 
             else:
-                print(f'Warning: without graph information. {title}')
-                return False
+                log.append(f'Warning: without graph information. {title}')
+                return []
 
         # 根据链接爬信息
         return paper_graph_information(driver, sqlite, wait_time, log)
 
     except Exceptions.NoSuchElementException as e:
-        print(f'warning: paper title: {title}\n{e}')
+        log.append(f'Warning(build_graph_from_title): paper title: {title}\n{e}')
+        return []
     except Exceptions.TimeoutException as e:
-        print(f'\nwarning: url failed(TimeoutException) {wait_time}\n{e}')
+        log.append(f'Warning(build_graph_from_title): url failed(TimeoutException) {wait_time}\n{e}')
+        return []
 
 
 def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: Log):
-    # log.append(f'Paper graph information: {graph_url}')
     try:
-        # 访问网页
-        # driver.get(graph_url)
-        # print(f'current_url: {driver.current_url}')
         log.append(f'Paper graph information: {driver.current_url}')
 
         # 相关文献信息
@@ -83,14 +82,14 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
                 EC.visibility_of_all_elements_located((By.CLASS_NAME, 'authors'))
             )
         # papers = driver.find_elements(By.CLASS_NAME, 'authors')
-    except Exceptions.NoSuchElementException as _:
-        print(f'\nwarning: url failed(NoSuchElementException)')
-        return False
-    except Exceptions.TimeoutException as _:
-        print(f'\nwarning: url failed(TimeoutException) {wait_time}')
-        return False
-
-    try:
+    # except Exceptions.NoSuchElementException as _:
+    #     print(f'Warning(paper_graph_information 1): url failed(NoSuchElementException)')
+    #     return []
+    # except Exceptions.TimeoutException as _:
+    #     print(f'Warning(paper_graph_information 1): url failed(TimeoutException) {wait_time}')
+    #     return []
+    #
+    # try:
         today = datetime.datetime.today()
         paper_connection = []
         for index, paper in enumerate(papers):
@@ -108,7 +107,13 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             # a = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[1]/div/a')
             title = a.text.strip()
             title = title.replace('"', '')
-            title = title.replace('.', '')
+            if title[-1] == '.':
+                title = title[:-1]
+
+            # 检查, 如果第一个标题在图里，直接返回数据
+            if index == 0 and sqlite.check_title_is_exists_in_graph(title):
+                return sqlite.select_connection_from_graph(title)
+
             # 翻译
             title_zh = baidu_trans(title)
             semantic_scholar_url = a.get_attribute("href")
@@ -192,16 +197,22 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             sqlite.insert_paper(paper_info)
 
         if len(paper_connection) != 41:
-            log.append(f'Warning: paper connection number is not 41!')
+            log.append(f'Warning(paper_graph_information): paper connection number is not 41!')
             return False
 
+        # 插入
         sqlite.insert_connection(paper_connection)
-        return True
+
+        # 返回信息
+        return sqlite.select_connection_from_graph(paper_connection[0])
 
     except Exceptions.NoSuchElementException as _:
-        print(f'\nwarning: url failed(NoSuchElementException)')
+        log.append(f'Warning(paper_graph_information): url failed(NoSuchElementException)')
+        return []
+
     except Exceptions.TimeoutException as _:
-        print(f'\nwarning: url failed(TimeoutException) {wait_time}')
+        log.append(f'Warning(paper_graph_information): url failed(TimeoutException) {wait_time}')
+        return []
 
 
 def bfs(driver: webdriver, titles, iteration, sqlite: Sqlite, wait_time, check_func, log: Log):
@@ -211,6 +222,8 @@ def bfs(driver: webdriver, titles, iteration, sqlite: Sqlite, wait_time, check_f
     log.append('--- Start bfs() ---')
 
     for index, item in enumerate(titles):
+        if item[-1] == '.':
+            item = item[:-1]
         # 列表作为队列，集合作为已访问，字典记录层数
         queue, looked, layer = [item], set(item), {item: 0}
 
@@ -222,14 +235,15 @@ def bfs(driver: webdriver, titles, iteration, sqlite: Sqlite, wait_time, check_f
             # 查找相邻节点
             res = sqlite.select_connection_from_graph(title)
             if len(res) == 0:
-                # 没有这个图
-                if not build_graph_from_title(driver, title, sqlite, wait_time, log):
-                    continue
+                # 没有这个图，新建一个
+                res = build_graph_from_title(driver, title, sqlite, wait_time, log)
 
-            res = sqlite.select_connection_from_graph(title)
-            if len(res) == 0:
-                # 真没有
-                continue
+                if len(res) == 0:
+                    # 真没有
+                    log.append(f'Warning: no connection: {title}')
+                    continue
+                else:
+                    log.append(f'Info: build finish.')
 
             # 查找相邻节点，41个节点
             nodes = res[0]

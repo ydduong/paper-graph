@@ -10,15 +10,13 @@
 - 配置selenium工具所需对应浏览器驱动: https://zhuanlan.zhihu.com/p/88152781 
 - 使用教程: https://betterprogramming.pub/the-beginners-guide-to-selenium-with-python-cde1937585c6
 - 驱动下载网址: https://registry.npmmirror.com/binary.html?path=chromedriver/
-- 
-
 
 使用
 
 - 初始论文标题在txt文件内，一行一个，如：test-title.txt
 - ```text
   PROSO II – a new method for protein solubility prediction
-  Sequence-based prediction of protein solubility.
+  Sequence-based prediction of protein solubility
   Prediction of protein solubility in E. coli
   ```
 - 配置参数文件 config.json

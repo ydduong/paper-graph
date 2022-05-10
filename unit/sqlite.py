@@ -205,16 +205,16 @@ class Sqlite(object):
 if __name__ == '__main__':
     _args = Args()
     sqlite = Sqlite(_args.database)
-    sqlite.check_table()
+    # _t = 'Protein–Sol: a web tool for predicting protein solubility from sequence'
+    # _t = 'Protein-Sol: a web tool for predicting protein solubility from sequence'
+    # print(sqlite.check_title_is_exists_in_graph(_t))
 
     # delete title
-    # _title = [
-    #     "Towards a molecular understanding of protein solubility",
-    #     "Biophysical analysis of protein solubility and aggregation using short amino acid peptide tags",
-    #     "Construction , expression and characterization of TEV protease 1 mutants engineered for improved solubility 2 3 4 5 Running title : 6 TEVp mutants 7 8 9"
-    # ]
-    # for _item in _title:
-    #     sqlite.delete_title(_item)
+    _title = [
+        "Prediction of protein solubility in E coli"
+    ]
+    for _item in _title:
+        sqlite.delete_title(_item)
 
     # sqlite.select_all_from_graph()
     # _res = sqlite.select_url_from_paper('Exploring the relationships between protein sequence, structure and solubility')
