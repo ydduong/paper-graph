@@ -1,0 +1,8 @@
+{
+    "title-file": "protein-solubility.txt",
+    "driver": "/Users/yudd/Downloads/chromedriver",
+    "iteration": 8,
+    "filter-keywords": ["solubility", "predict"],
+    "wait-time": 30,
+    "is-zh": 1
+}

@@ -1,0 +1,3 @@
+PROSO II – a new method for protein solubility prediction
+Sequence-based prediction of protein solubility.
+Prediction of protein solubility in E. coli
