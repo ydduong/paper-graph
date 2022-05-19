@@ -11,20 +11,20 @@ import selenium.common.exceptions as Exceptions
 import datetime
 
 
-def build_graph_from_title(driver: webdriver, title, sqlite: Sqlite, wait_time, log: Log):
-    log.append(f'Build graph from title: {title}')
+def build_graph_from_title(title: str, args: Args):
+    args.log.append(f'Build graph from title: {title}')
     try:
         # 关系图链接
-        res = sqlite.select_url_from_paper(title)
+        res = args.sqlite.select_url_from_paper(title)
         if len(res) != 0:
             url = res[0][0]
-            driver.get(url)
+            args.driver.get(url)
         else:
             # 访问搜索首页
-            driver.get('https://www.connectedpapers.com/')
+            args.driver.get('https://www.connectedpapers.com/')
 
             # 输入标题
-            search_bar = WebDriverWait(driver=driver, timeout=wait_time, poll_frequency=0.5).until(
+            search_bar = WebDriverWait(driver=args.driver, timeout=args.wait_time, poll_frequency=0.5).until(
                 EC.visibility_of_element_located((By.XPATH, '/html/body/div/div/div[2]/div/div[1]/div/div/div[1]/div/form/input'))
             )
             search_bar.clear()
@@ -32,7 +32,7 @@ def build_graph_from_title(driver: webdriver, title, sqlite: Sqlite, wait_time, 
             # driver.find_elements(By.ID, 'searchbar-input')[1].send_keys(title)
 
             # 点击搜索
-            WebDriverWait(driver=driver, timeout=wait_time, poll_frequency=0.5).until(
+            WebDriverWait(driver=args.driver, timeout=args.wait_time, poll_frequency=0.5).until(
                 EC.visibility_of_element_located(
                     (
                         By.XPATH,
@@ -46,7 +46,7 @@ def build_graph_from_title(driver: webdriver, title, sqlite: Sqlite, wait_time, 
             # print(driver.current_url)
 
             # 跳转到搜索结果页面
-            res = WebDriverWait(driver=driver, timeout=wait_time, poll_frequency=0.5).until(
+            res = WebDriverWait(driver=args.driver, timeout=args.wait_time, poll_frequency=0.5).until(
                 EC.visibility_of_all_elements_located((By.TAG_NAME, "article"))
             )
             # res = driver.find_elements(By.TAG_NAME, "article")
@@ -59,47 +59,42 @@ def build_graph_from_title(driver: webdriver, title, sqlite: Sqlite, wait_time, 
                 # url = driver.current_url
 
             else:
-                log.append(f'Warning: without graph information. {title}')
+                args.log.append(f'Warning: without graph information. {title}')
                 return []
 
         # 根据链接爬信息
-        return paper_graph_information(driver, sqlite, wait_time, log)
+        return paper_graph_information(args)
 
     except Exceptions.NoSuchElementException as e:
-        log.append(f'Warning(build_graph_from_title): paper title: {title}\n{e}')
+        args.log.append(f'Warning(build_graph_from_title): paper title: {title}\n{e}')
         return []
     except Exceptions.TimeoutException as e:
-        log.append(f'Warning(build_graph_from_title): url failed(TimeoutException) {wait_time}\n{e}')
+        args.log.append(f'Warning(build_graph_from_title): url failed(TimeoutException) {wait_time}\n{e}')
         return []
 
 
-def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: Log):
+def paper_graph_information(args: Args):
     try:
-        log.append(f'Paper graph information: {driver.current_url}')
+        args.log.append(f'Paper graph information: {args.driver.current_url}')
 
         # 相关文献信息
-        papers = WebDriverWait(driver=driver, timeout=wait_time, poll_frequency=0.5).until(
+        papers = WebDriverWait(driver=args.driver, timeout=args.wait_time, poll_frequency=0.5).until(
                 EC.visibility_of_all_elements_located((By.CLASS_NAME, 'authors'))
             )
-        # papers = driver.find_elements(By.CLASS_NAME, 'authors')
-    # except Exceptions.NoSuchElementException as _:
-    #     print(f'Warning(paper_graph_information 1): url failed(NoSuchElementException)')
-    #     return []
-    # except Exceptions.TimeoutException as _:
-    #     print(f'Warning(paper_graph_information 1): url failed(TimeoutException) {wait_time}')
-    #     return []
-    #
-    # try:
+
         today = datetime.datetime.today()
         paper_connection = []
+
+        # 会有某个元素缺失的现象，导致失败，比如没有摘要
+        # https://www.connectedpapers.com/main/68f8aa2f5b59232a4e009f46566b4cb591276b97/Improved-solubility-of-TEV-protease-by-directed-evolution./graph
         for index, paper in enumerate(papers):
             paper_info = []
 
             # 鼠标移动到论文上来，以显示详细信息
-            ActionChains(driver).move_to_element(paper).perform()
+            ActionChains(args.driver).move_to_element(paper).perform()
 
             # 标题 同时获取 semantic_scholar_url
-            a = WebDriverWait(driver=driver, timeout=wait_time, poll_frequency=0.5).until(
+            a = WebDriverWait(driver=args.driver, timeout=args.wait_time, poll_frequency=0.5).until(
                 EC.visibility_of_element_located(
                     (By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[1]/div/a')
                 )
@@ -111,8 +106,8 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
                 title = title[:-1]
 
             # 检查, 如果第一个标题在图里，直接返回数据
-            if index == 0 and sqlite.check_title_is_exists_in_graph(title):
-                return sqlite.select_connection_from_graph(title)
+            if index == 0 and args.sqlite.check_title_is_exists_in_graph(title):
+                return args.sqlite.select_connection_from_graph(title)
 
             # 翻译
             title_zh = baidu_trans(title)
@@ -122,17 +117,17 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             # print(title)
 
             # 如果已经有了，跳过
-            if sqlite.check_title_is_exists(title):
+            if args.sqlite.check_title_is_exists(title):
                 continue
 
             # 作者
-            div = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[2]/div/div')
+            div = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[2]/div/div')
             author = div.text.strip()
             paper_info.append(author)
 
             # year journal: 他俩之间可能是逗号，空格分割，或者只有年份没有期刊
             # //*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[3]/div[1]
-            div = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[3]/div[1]')
+            div = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[3]/div[1]')
             text = div.text.strip()
             if len(text) <= 4:
                 year = text
@@ -147,7 +142,7 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             paper_info.append(journal)
 
             # 引用
-            div = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[4]/div[1]')
+            div = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[4]/div[1]')
             text = div.text.strip()
             index_t = text.find(' ')
             citations = text[:index_t].strip()
@@ -167,7 +162,7 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             paper_info.append(str(round(year_citations, 2)))
 
             # 关系图链接
-            a = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[5]/a')
+            a = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[5]/a')
             connected_papers_url = a.get_attribute("href").strip()
             paper_info.append(connected_papers_url)
 
@@ -175,12 +170,12 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             paper_info.append(semantic_scholar_url)
 
             # 文章发布页面
-            a = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[5]/a[3]')
+            a = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[5]/a[3]')
             publisher_page_url = a.get_attribute("href").strip()
             paper_info.append(publisher_page_url)
 
             #
-            div = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[6]')
+            div = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[6]')
             abstract = div.text.strip()
             abstract = abstract.replace('"', '')
             abstract = abstract.replace('\n', '')
@@ -194,32 +189,32 @@ def paper_graph_information(driver: webdriver, sqlite: Sqlite, wait_time, log: L
             paper_info.append(title_zh)
             paper_info.append(abstract_zh)
 
-            sqlite.insert_paper(paper_info)
+            args.sqlite.insert_paper(paper_info)
 
         if len(paper_connection) != 41:
-            log.append(f'Warning(paper_graph_information): paper connection number is not 41!')
+            args.log.append(f'Warning(paper_graph_information): paper connection number is not 41!')
             return False
 
         # 插入
-        sqlite.insert_connection(paper_connection)
+        args.sqlite.insert_connection(paper_connection)
 
         # 返回信息
-        return sqlite.select_connection_from_graph(paper_connection[0])
+        return args.sqlite.select_connection_from_graph(paper_connection[0])
 
     except Exceptions.NoSuchElementException as _:
-        log.append(f'Warning(paper_graph_information): url failed(NoSuchElementException)')
+        args.log.append(f'Warning(paper_graph_information): url failed(NoSuchElementException)')
         return []
 
     except Exceptions.TimeoutException as _:
-        log.append(f'Warning(paper_graph_information): url failed(TimeoutException) {wait_time}')
+        args.log.append(f'Warning(paper_graph_information): url failed(TimeoutException) {args.wait_time}')
         return []
 
 
-def bfs(driver: webdriver, titles, iteration, sqlite: Sqlite, wait_time, check_func, log: Log):
+def bfs(titles: list, args: Args):
     """
     :func 建图建完整，扩展的时候再根据筛选条件决定是否扩展
     """
-    log.append('--- Start bfs() ---')
+    args.log.append('--- Start bfs() ---')
 
     for index, item in enumerate(titles):
         if item[-1] == '.':
@@ -230,46 +225,37 @@ def bfs(driver: webdriver, titles, iteration, sqlite: Sqlite, wait_time, check_f
         while len(queue) > 0:
             title = queue.pop(0)
 
-            log.append(f'Title: {index + 1}-{layer.get(title, 0) + 1}, {title}')
+            args.log.append(f'Title: {index + 1}-{layer.get(title, 0) + 1}, {title}')
 
             # 查找相邻节点
-            res = sqlite.select_connection_from_graph(title)
+            res = args.sqlite.select_connection_from_graph(title)
             if len(res) == 0:
                 # 没有这个图，新建一个
-                res = build_graph_from_title(driver, title, sqlite, wait_time, log)
+                res = build_graph_from_title(title, args)
 
                 if len(res) == 0:
                     # 真没有
-                    log.append(f'Warning: no connection: {title}')
+                    args.log.append(f'Warning: no connection: {title}')
                     continue
                 else:
-                    log.append(f'Info: build finish.')
+                    args.log.append(f'Info: build finish.')
 
             # 查找相邻节点，41个节点
             nodes = res[0]
 
             # 检测节点
             for node in nodes:
-                if check_func(node):
+                if args.check_is_keyword_in_strings(node):
                     if node not in looked and node != title:
                         # 子代
                         # layer[node] = layer.get(title, 0) + 1
-                        if layer.get(title, 0) < iteration - 1:
+                        if layer.get(title, 0) < args.iteration - 1:
                             layer[node] = layer.get(title, 0) + 1
                             queue.append(node)
                             looked.add(node)
 
 
 def spider(args: Args):
-    # 日志对象
-    log = args.log
-
-    # 浏览器驱动
-    driver = args.driver
-
-    # 数据库对象
-    sqlite = Sqlite(args.database)
-
     # 读取目录文件
     titles = []
     with open(args.paper_title_file, 'r', encoding='utf-8') as r:
@@ -277,9 +263,8 @@ def spider(args: Args):
         for line in lines:
             titles.append(line.strip())
 
-    bfs(driver, titles, args.iteration, sqlite, args.wait_time, args.check_is_keyword_in_strings, log)
+    bfs(titles, args)
 
-    print("spider finish.")
-    driver.close()
+    args.log.append("spider finish.")
     pass
 

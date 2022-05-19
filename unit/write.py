@@ -12,7 +12,7 @@ class Write:
         self._log = args.log
         self._is_zh = args.is_zh
 
-        self._sqlite = Sqlite(args.database)
+        self._sqlite = args.sqlite
         self._result = self._sqlite.select_all_from_paper()
         self._header = self._sqlite.header
 
@@ -75,13 +75,20 @@ class Write:
 
                 if self._is_zh:  # 标题、链接、引用，年均引用，作者、年份，期刊、中文标题、中文摘要
                     strs = f'''### {sign}.{item[header.get('title')]}
-- {item[header.get('publisher_page_url')]}
-- {item[header.get('citations')]}, {item[header.get('year_citations')]}, {item[header.get('author')]}
-- {item[header.get('year')]}, {item[header.get('journal')]}
-- {item[header.get('title_zh')]}
-- {item[header.get('abstract_zh')]}
+{item[header.get('citations')]}, {item[header.get('year_citations')]}, {item[header.get('author')]}
+{item[header.get('year')]}, {item[header.get('journal')]}
+{item[header.get('title_zh')]}
+{item[header.get('abstract_zh')]}
 
 '''
+#                     strs = f'''### {sign}.{item[header.get('title')]}
+# - {item[header.get('publisher_page_url')]}
+# - {item[header.get('citations')]}, {item[header.get('year_citations')]}, {item[header.get('author')]}
+# - {item[header.get('year')]}, {item[header.get('journal')]}
+# - {item[header.get('title_zh')]}
+# - {item[header.get('abstract_zh')]}
+#
+# '''
                 else:  # 标题、链接、引用，年均引用，作者、年份，期刊、摘要
                     strs = f'''### {sign}.{item[header.get('title')]}
 - {item[header.get('publisher_page_url')]}

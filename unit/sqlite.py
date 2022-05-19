@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os.path
 import sqlite3
-from unit import Args
 
 
 class Sqlite(object):
@@ -203,8 +202,8 @@ class Sqlite(object):
 
 
 if __name__ == '__main__':
-    _args = Args()
-    sqlite = Sqlite(_args.database)
+    _database_file = 'test.bd'
+    sqlite = Sqlite(_database_file)
     # _t = 'Protein–Sol: a web tool for predicting protein solubility from sequence'
     # _t = 'Protein-Sol: a web tool for predicting protein solubility from sequence'
     # print(sqlite.check_title_is_exists_in_graph(_t))

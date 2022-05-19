@@ -7,6 +7,7 @@
 
 import requests
 import random
+import json
 from hashlib import md5
 
 
@@ -58,6 +59,10 @@ def baidu_trans(query):
     except requests.exceptions.ProxyError as e:
         print(f'Error: HTTPConnectionPool. {e}')
         raise
+    except json.decoder.JSONDecodeError as _:
+        return ""
+    except requests.exceptions.ReadTimeout as _:
+        return ""
 
     return dst
 

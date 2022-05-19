@@ -7,6 +7,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import selenium.common.exceptions as Exceptions
 
+from unit import Sqlite
+
 
 def init_driver(address):
     # 创建一个参数对象，用来控制chrome以无界面模式打开，反制selenium采取了监测机制，设置下载目录
@@ -71,7 +73,8 @@ class Args:
         self.markdown = os.path.join(paper_file_dir, f'{paper_title_file_name}{zh}.md')
 
         # 当前主题数据库
-        self.database = os.path.join(paper_file_dir, 'database.db')
+        self._database = os.path.join(paper_file_dir, 'database.db')
+        self.sqlite = Sqlite(self._database)
 
         # 日志文件
         self.log = os.path.join(paper_file_dir, 'log.txt')
@@ -100,6 +103,9 @@ class Args:
                 is_exists = False
                 break
         return is_exists
+
+    def __del__(self):
+        self.driver.close()
 
 
 class Log:
