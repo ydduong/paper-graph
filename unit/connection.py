@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from unit import Args, Sqlite, Log, baidu_trans
+from unit import Args, baidu_trans
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -65,11 +65,11 @@ def build_graph_from_title(title: str, args: Args):
         # 根据链接爬信息
         return paper_graph_information(args)
 
-    except Exceptions.NoSuchElementException as e:
-        args.log.append(f'Warning(build_graph_from_title): paper title: {title}\n{e}')
+    except Exceptions.NoSuchElementException as _:
+        args.log.append(f'Warning(build_graph_from_title): paper title: {title}')
         return []
-    except Exceptions.TimeoutException as e:
-        args.log.append(f'Warning(build_graph_from_title): url failed(TimeoutException) {wait_time}\n{e}')
+    except Exceptions.TimeoutException as _:
+        args.log.append(f'Warning(build_graph_from_title): url failed(TimeoutException) {args.wait_time}')
         return []
 
 
@@ -102,15 +102,14 @@ def paper_graph_information(args: Args):
             # a = driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[1]/div/a')
             title = a.text.strip()
             title = title.replace('"', '')
-            if title[-1] == '.':
-                title = title[:-1]
+            # if title[-1] == '.':
+            #     title = title[:-1]
 
             # 检查, 如果第一个标题在图里，直接返回数据
             if index == 0 and args.sqlite.check_title_is_exists_in_graph(title):
                 return args.sqlite.select_connection_from_graph(title)
 
             # 翻译
-            title_zh = baidu_trans(title)
             semantic_scholar_url = a.get_attribute("href")
             paper_info.append(title)
             paper_connection.append(title)
@@ -174,26 +173,32 @@ def paper_graph_information(args: Args):
             publisher_page_url = a.get_attribute("href").strip()
             paper_info.append(publisher_page_url)
 
-            #
-            div = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[6]')
-            abstract = div.text.strip()
-            abstract = abstract.replace('"', '')
-            abstract = abstract.replace('\n', '')
-            # 翻译
-            abstract_zh = baidu_trans(abstract)
-            # print(abstract)
-            # print(driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[6]/text()'))
+            # 部分文章没有摘要
+            try:
+                div = args.driver.find_element(By.XPATH, '//*[@id="desktop-app"]/div[2]/div[3]/div[3]/div/div[2]/div[6]')
+                abstract = div.text.strip()
+                abstract = abstract.replace('"', '')
+                abstract = abstract.replace('\n', '')
+            except Exceptions.NoSuchElementException as _:
+                abstract = ''
             paper_info.append(abstract)
 
             # 加入翻译
-            paper_info.append(title_zh)
-            paper_info.append(abstract_zh)
+            if args.is_zh:
+                title_zh = baidu_trans(title)
+                abstract_zh = baidu_trans(abstract)
+
+                paper_info.append(title_zh)
+                paper_info.append(abstract_zh)
+            else:
+                paper_info.append('')
+                paper_info.append('')
 
             args.sqlite.insert_paper(paper_info)
 
         if len(paper_connection) != 41:
             args.log.append(f'Warning(paper_graph_information): paper connection number is not 41!')
-            return False
+            return []
 
         # 插入
         args.sqlite.insert_connection(paper_connection)
@@ -216,11 +221,12 @@ def bfs(titles: list, args: Args):
     """
     args.log.append('--- Start bfs() ---')
 
+    # 规范标题
+    standard_titles = set()
     for index, item in enumerate(titles):
-        if item[-1] == '.':
-            item = item[:-1]
         # 列表作为队列，集合作为已访问，字典记录层数
         queue, looked, layer = [item], set(item), {item: 0}
+        standard_titles.add(item)
 
         while len(queue) > 0:
             title = queue.pop(0)
@@ -235,10 +241,13 @@ def bfs(titles: list, args: Args):
 
                 if len(res) == 0:
                     # 真没有
-                    args.log.append(f'Warning: no connection: {title}')
+                    args.log.append(f'Warning: no connection({title})')
                     continue
                 else:
-                    args.log.append(f'Info: build finish.')
+                    args.log.append(f'Info: build finish({res[0][0]})')
+                    if item == title:  # 是初始标题
+                        standard_titles.remove(item)
+                        standard_titles.add(res[0][0])
 
             # 查找相邻节点，41个节点
             nodes = res[0]
@@ -247,12 +256,15 @@ def bfs(titles: list, args: Args):
             for node in nodes:
                 if args.check_is_keyword_in_strings(node):
                     if node not in looked and node != title:
-                        # 子代
-                        # layer[node] = layer.get(title, 0) + 1
                         if layer.get(title, 0) < args.iteration - 1:
                             layer[node] = layer.get(title, 0) + 1
                             queue.append(node)
                             looked.add(node)
+
+    # 将规范标题写入新文件
+    with open(args.paper_title_file, 'w', encoding='utf-8') as w:
+        for item in standard_titles:
+            w.write(f'{item}\n')
 
 
 def spider(args: Args):
@@ -261,6 +273,8 @@ def spider(args: Args):
     with open(args.paper_title_file, 'r', encoding='utf-8') as r:
         lines = r.readlines()
         for line in lines:
+            if len(line.strip()) == 0:
+                continue
             titles.append(line.strip())
 
     bfs(titles, args)

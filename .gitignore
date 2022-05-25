@@ -1,6 +1,9 @@
 .idea
 __pycache__
 .DS_Store
+unit/test.py
 protein-solubility
 protein-solubility.txt
-unit/bib.py
+thermal-adaptation
+thermal-adaptation.txt
+test-title

@@ -1,8 +1,8 @@
 {
-    "title-file": "protein-solubility.txt",
+    "title-file": "thermal-adaptation.txt",
     "driver": "/Users/yudd/Downloads/chromedriver",
-    "iteration": 8,
-    "filter-keywords": ["solu", "predict"],
+    "iteration": 2,
+    "filter-keywords": [],
     "wait-time": 30,
-    "is-zh": 1
+    "is-zh": 0
 }

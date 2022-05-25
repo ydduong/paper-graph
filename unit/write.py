@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from unit import Sqlite, Args
+from unit import Args, baidu_trans
 import openpyxl
 
 
@@ -14,7 +14,12 @@ class Write:
 
         self._sqlite = args.sqlite
         self._result = self._sqlite.select_all_from_paper()
-        self._header = self._sqlite.header
+        # self._header = self._sqlite.header
+
+        # 索引
+        self.header = {'title': 0, 'author': 1, 'year': 2, 'journal': 3, 'citations': 4, 'year_citations': 5,
+                       'connected_papers_url': 6, 'semantic_scholar_url': 7, 'publisher_page_url': 8, 'abstract': 9,
+                       'title_zh': 10, 'abstract_zh': 11}
 
         # 对结果按引用量排序
         self._result = list(self._result)
@@ -22,7 +27,7 @@ class Write:
 
         count = 0
         for item in self._result:
-            if self._check_func(item[0]):
+            if self._check_func(item[self.header.get('title')]):
                 print(item)
                 count += 1
             if count > 4:
@@ -36,20 +41,31 @@ class Write:
         target_sheet = target_workbook.create_sheet('sheet0')
 
         # 表头
-        header = ['title', 'author', 'year', 'journal', 'citations', 'year_citations', 'connected_papers_url', 'semantic_scholar_url', 'publisher_page_url', 'abstract']
+        header = ['title', 'author', 'year', 'journal', 'citations', 'year_citations', 'connected_papers_url',
+                  'semantic_scholar_url', 'publisher_page_url', 'abstract']
         if self._is_zh:
-            header = ['title', 'author', 'year', 'journal', 'citations', 'year_citations', 'connected_papers_url', 'semantic_scholar_url', 'publisher_page_url', 'abstract', 'title_zh', 'abstract_zh']
+            header = ['title', 'author', 'year', 'journal', 'citations', 'year_citations', 'connected_papers_url',
+                      'semantic_scholar_url', 'publisher_page_url', 'abstract', 'title_zh', 'abstract_zh']
 
         target_sheet.append(header)
 
         # 写入
         if self._is_zh:
             for item in self._result:
-                if self._check_func(item[0]):
+                item = list(item)
+                if len(item[self.header.get('title_zh')]) == 0:
+                    item[self.header.get('title_zh')] = baidu_trans(item[self.header.get('title')])
+
+                if len(item[self.header.get('abstract_zh')]) == 0:
+                    item[self.header.get('abstract_zh')] = baidu_trans(item[self.header.get('abstract')])
+
+                if self._check_func(item[self.header.get('title')]):
                     target_sheet.append(item)
+
+                # 翻译之后 需要 写入数据库
         else:
             for item in self._result:
-                if self._check_func(item[0]):
+                if self._check_func(item[self.header.get('title')]):
                     item = list(item)
                     item = item[:-2]
                     target_sheet.append(item)
@@ -60,41 +76,36 @@ class Write:
     def to_markdown(self):
         self._log.append('Starting write to markdown.')
 
-        # 索引
-        header = {'title': 0, 'author': 1, 'year': 2, 'journal': 3, 'citations': 4, 'year_citations': 5,
-                  'connected_papers_url': 6, 'semantic_scholar_url': 7, 'publisher_page_url': 8, 'abstract': 9,
-                  'title_zh': 10, 'abstract_zh': 11}
-
         # 写入
         sign = 0
         with open(self._markdown, 'w', encoding='utf-8') as w:
             for item in self._result:
-                if not self._check_func(item[0]):
+                if not self._check_func(item[self.header.get('title')]):
                     continue
                 sign += 1
 
                 if self._is_zh:  # 标题、链接、引用，年均引用，作者、年份，期刊、中文标题、中文摘要
-                    strs = f'''### {sign}.{item[header.get('title')]}
-{item[header.get('citations')]}, {item[header.get('year_citations')]}, {item[header.get('author')]}
-{item[header.get('year')]}, {item[header.get('journal')]}
-{item[header.get('title_zh')]}
-{item[header.get('abstract_zh')]}
-
-'''
-#                     strs = f'''### {sign}.{item[header.get('title')]}
-# - {item[header.get('publisher_page_url')]}
-# - {item[header.get('citations')]}, {item[header.get('year_citations')]}, {item[header.get('author')]}
-# - {item[header.get('year')]}, {item[header.get('journal')]}
-# - {item[header.get('title_zh')]}
-# - {item[header.get('abstract_zh')]}
+#                     strs = f'''### {sign}.{item[self.header.get('title')]}
+# {item[self.header.get('citations')]}, {item[self.header.get('year_citations')]}, {item[self.header.get('author')]}
+# {item[self.header.get('year')]}, {item[self.header.get('journal')]}
+# {item[self.header.get('title_zh')]}
+# {item[self.header.get('abstract_zh')]}
 #
 # '''
+                    strs = f'''### {sign}.{item[self.header.get('title')]}
+- {item[self.header.get('publisher_page_url')]}
+- {item[self.header.get('citations')]}, {item[self.header.get('year_citations')]}, {item[self.header.get('author')]}
+- {item[self.header.get('year')]}, {item[self.header.get('journal')]}
+- {item[self.header.get('title_zh')]}
+- {item[self.header.get('abstract_zh')]}
+
+'''
                 else:  # 标题、链接、引用，年均引用，作者、年份，期刊、摘要
-                    strs = f'''### {sign}.{item[header.get('title')]}
-- {item[header.get('publisher_page_url')]}
-- {item[header.get('citations')]}, {item[header.get('year_citations')]}, {item[header.get('author')]}
-- {item[header.get('year')]}, {item[header.get('journal')]}
-- {item[header.get('abstract')]}
+                    strs = f'''### {sign}.{item[self.header.get('title')]}
+- {item[self.header.get('publisher_page_url')]}
+- {item[self.header.get('citations')]}, {item[self.header.get('year_citations')]}, {item[self.header.get('author')]}
+- {item[self.header.get('year')]}, {item[self.header.get('journal')]}
+- {item[self.header.get('abstract')]}
 
 '''
                 w.write(strs)

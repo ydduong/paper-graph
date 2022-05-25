@@ -17,6 +17,8 @@ def make_md5(s, encoding='utf-8'):
 
 
 def baidu_trans(query):
+    """
+    print(f'query: {query}')
     # query = 'Hello World! This is 1st paragraph. This is 2nd paragraph.'
 
     # Set your own appid/appkey.
@@ -41,6 +43,7 @@ def baidu_trans(query):
     # Send request
     dst = ''
     try:
+        print(url)
         r = requests.post(url, params=payload, headers=headers)
         result = r.json()
         # {
@@ -58,13 +61,17 @@ def baidu_trans(query):
             dst += trans.get('dst', '')
     except requests.exceptions.ProxyError as e:
         print(f'Error: HTTPConnectionPool. {e}')
-        raise
-    except json.decoder.JSONDecodeError as _:
         return ""
-    except requests.exceptions.ReadTimeout as _:
+    except json.decoder.JSONDecodeError as e:
+        print(f'Error: JSONDecodeError. {e}')
         return ""
-
+    except requests.exceptions.ReadTimeout as e:
+        print(f'Error: ReadTimeout. {e}')
+        return ""
+    print(dst)
     return dst
+    """
+    return ''
 
 
 if __name__ == "__main__":

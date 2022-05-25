@@ -55,8 +55,9 @@ class Args:
         # 等待时间
         self.wait_time = self.args_json.get('wait-time', 3)
 
-        # 翻译成中文
-        self.is_zh = True if self.args_json.get('is-zh', 0) == 1 else False
+        # 翻译成中文 暂时禁用掉翻译
+        # self.is_zh = True if self.args_json.get('is-zh', 0) == 1 else False
+        self.is_zh = False
 
         # 论文标题合集文件
         self.paper_title_file = self.args_json.get('title-file', 'test.txt')
@@ -87,7 +88,7 @@ class Args:
         print(f'iteration: {self.iteration}')
         print(f'filter-keywords: {self.filter_keywords}')
         print(f'wait-time: {self.wait_time}')
-        print(f'is-zh: {self.is_zh}')
+        print(f'is-zh: {self.is_zh}. not work')
         print(f'---------------------------------------------')
 
     def check_is_keyword_in_strings(self, title):
