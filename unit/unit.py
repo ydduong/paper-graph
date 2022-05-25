@@ -72,6 +72,8 @@ class Args:
         zh = '-zh' if self.is_zh else ''
         self.excel_file = os.path.join(paper_file_dir, f'{paper_title_file_name}{zh}.xlsx')
         self.markdown = os.path.join(paper_file_dir, f'{paper_title_file_name}{zh}.md')
+        self.docx = os.path.join(paper_file_dir, f'{paper_title_file_name}{zh}.docx')
+        self.words_list = os.path.join(paper_file_dir, f'{paper_title_file_name}-words{zh}.txt')
 
         # 当前主题数据库
         self._database = os.path.join(paper_file_dir, 'database.db')

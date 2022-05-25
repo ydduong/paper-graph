@@ -19,7 +19,6 @@ if __name__ == "__main__":
 
     # 输入结果到文件
     w = Write(_args)
-    w.to_excel()
-    w.to_markdown()
+    w.run()
 
     pass

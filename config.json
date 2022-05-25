@@ -1,8 +1,8 @@
 {
     "title-file": "thermal-adaptation.txt",
     "driver": "/Users/yudd/Downloads/chromedriver",
-    "iteration": 2,
-    "filter-keywords": [],
+    "iteration": 1,
+    "filter-keywords": ["thermophil"],
     "wait-time": 30,
     "is-zh": 0
 }

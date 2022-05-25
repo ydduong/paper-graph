@@ -3,12 +3,25 @@
 from unit import Args, baidu_trans
 import openpyxl
 
+# 导入库 python-docx
+from docx import Document
+from docx.shared import Pt, RGBColor
+from docx.shared import Inches
+from docx.oxml.ns import qn
+
+# 分词
+from nltk import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+
 
 class Write:
     def __init__(self, args: Args):
         self._check_func = args.check_is_keyword_in_strings
         self._excel_file = args.excel_file
         self._markdown = args.markdown
+        self._docx = args.docx
+        self._words_list = args.words_list
         self._log = args.log
         self._is_zh = args.is_zh
 
@@ -110,6 +123,90 @@ class Write:
 '''
                 w.write(strs)
         pass
+
+    def to_word(self):
+        # https://blog.csdn.net/auspark/article/details/106634417
+        self._log.append('Starting write to docx.')
+
+        # 新建空白文档
+        doc = Document()
+
+        # 正文样式
+        style = doc.styles['Normal']
+        style.font.name = 'Times New Roman'  # 必须先设置font.name
+        style.font.size = Pt(10.5)
+        style.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+
+        sign = 0
+        for item in self._result:
+            if not self._check_func(item[self.header.get('title')]):
+                continue
+            sign += 1
+
+            if self._is_zh:  # 标题、链接、引用，年均引用，作者、年份，期刊、中文标题、中文摘要
+                print('Warning: please check write to word code for zh.')
+                pass
+            else:  # 标题、链接、引用，年均引用，作者、年份，期刊、摘要
+                title = doc.add_heading(level=1)
+                title.paragraph_format.space_before = Pt(6)  # 设置段前 0 磅
+                title.paragraph_format.space_after = Pt(6)  # 设置段后 0 磅
+                title.paragraph_format.line_spacing = 1.2  # 设置行间距为 1.5
+                run = title.add_run(f"{sign}.{item[self.header.get('title')]}")
+                run.font.size = Pt(14)  # 设置字体大小，小四对应值为12
+                run.font.color.rgb = RGBColor(0, 0, 0)
+                run.font.name = 'Times New Roman'  # 设置字体类型属性
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')  # font = u'黑体'
+
+                # 增加无序列表
+                doc.add_paragraph(item[self.header.get('publisher_page_url')], style='List Bullet')
+                doc.add_paragraph(f"{item[self.header.get('citations')]}, {item[self.header.get('year_citations')]}, {item[self.header.get('author')]}", style='List Bullet')
+                doc.add_paragraph(f"{item[self.header.get('year')]}, {item[self.header.get('journal')]}", style='List Bullet')
+                paragraph = doc.add_paragraph({item[self.header.get('abstract')]}, style='List Bullet')
+                paragraph.alignment = 3
+                doc.add_paragraph()
+
+        # 保存文件
+        doc.save(self._docx)
+
+    def to_title_word_list(self):
+        # 记录词频
+        stem = {}
+
+        for item in self._result:
+            if not self._check_func(item[self.header.get('title')]):
+                continue
+
+            # 以空格形式实现分词
+            words = word_tokenize(item[self.header.get('title')])
+
+            # 除去符号
+            punctuation = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%']  # 定义标点符号列表
+            words = [word for word in words if word not in punctuation]  # 去除标点符号
+
+            # 除去停用词
+            stops = set(stopwords.words("english"))
+            words = [word for word in words if word not in stops]
+            # print(words)
+
+            # 提取词干
+            for word in words:
+                word = PorterStemmer().stem(word)
+                stem[word] = stem.get(word, 0) + 1  # 词干提取
+
+        # 排序 [('heard', 3), ('i', 2)]
+        res = sorted(stem.items(), key=lambda x: x[1], reverse=True)
+
+        # 写入文件
+        with open(self._words_list, 'w', encoding='utf-8') as w:
+            for item in res:
+                strs = f'{item[0]}, {item[1]}\n'
+                w.write(strs)
+
+    def run(self):
+        self.to_title_word_list()
+        self.to_excel()
+        self.to_markdown()
+        self.to_word()
 
 
 if __name__ == '__main__':
