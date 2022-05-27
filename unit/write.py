@@ -10,9 +10,9 @@ from docx.shared import Inches
 from docx.oxml.ns import qn
 
 # 分词
-from nltk import word_tokenize
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
+# from nltk import word_tokenize
+# from nltk.corpus import stopwords
+# from nltk.stem import PorterStemmer
 
 
 class Write:
@@ -168,42 +168,42 @@ class Write:
         # 保存文件
         doc.save(self._docx)
 
-    def to_title_word_list(self):
-        # 记录词频
-        stem = {}
-
-        for item in self._result:
-            if not self._check_func(item[self.header.get('title')]):
-                continue
-
-            # 以空格形式实现分词
-            words = word_tokenize(item[self.header.get('title')])
-
-            # 除去符号
-            punctuation = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%']  # 定义标点符号列表
-            words = [word for word in words if word not in punctuation]  # 去除标点符号
-
-            # 除去停用词
-            stops = set(stopwords.words("english"))
-            words = [word for word in words if word not in stops]
-            # print(words)
-
-            # 提取词干
-            for word in words:
-                word = PorterStemmer().stem(word)
-                stem[word] = stem.get(word, 0) + 1  # 词干提取
-
-        # 排序 [('heard', 3), ('i', 2)]
-        res = sorted(stem.items(), key=lambda x: x[1], reverse=True)
-
-        # 写入文件
-        with open(self._words_list, 'w', encoding='utf-8') as w:
-            for item in res:
-                strs = f'{item[0]}, {item[1]}\n'
-                w.write(strs)
+    # def to_title_word_list(self):
+    #     # 记录词频
+    #     stem = {}
+    #
+    #     for item in self._result:
+    #         if not self._check_func(item[self.header.get('title')]):
+    #             continue
+    #
+    #         # 以空格形式实现分词
+    #         words = word_tokenize(item[self.header.get('title')])
+    #
+    #         # 除去符号
+    #         punctuation = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%']  # 定义标点符号列表
+    #         words = [word for word in words if word not in punctuation]  # 去除标点符号
+    #
+    #         # 除去停用词
+    #         stops = set(stopwords.words("english"))
+    #         words = [word for word in words if word not in stops]
+    #         # print(words)
+    #
+    #         # 提取词干
+    #         for word in words:
+    #             word = PorterStemmer().stem(word)
+    #             stem[word] = stem.get(word, 0) + 1  # 词干提取
+    #
+    #     # 排序 [('heard', 3), ('i', 2)]
+    #     res = sorted(stem.items(), key=lambda x: x[1], reverse=True)
+    #
+    #     # 写入文件
+    #     with open(self._words_list, 'w', encoding='utf-8') as w:
+    #         for item in res:
+    #             strs = f'{item[0]}, {item[1]}\n'
+    #             w.write(strs)
 
     def run(self):
-        self.to_title_word_list()
+        # self.to_title_word_list()
         self.to_excel()
         self.to_markdown()
         self.to_word()
