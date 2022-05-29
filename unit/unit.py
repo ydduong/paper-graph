@@ -6,21 +6,32 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import selenium.common.exceptions as Exceptions
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 from unit import Sqlite
 
 
 def init_driver(address):
     # 创建一个参数对象，用来控制chrome以无界面模式打开，反制selenium采取了监测机制，设置下载目录
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_experimental_option('excludeSwitches',
-                                           ['enable-automation'])
+    # chrome_options = Options()
+    # chrome_options.add_argument('--headless')
+    # chrome_options.add_argument('--disable-gpu')
+    # chrome_options.add_experimental_option('excludeSwitches',
+    #                                        ['enable-automation'])
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-ssl-errors=yes')
+    options.add_argument('--ignore-certificate-errors')
 
     try:
         # 创建浏览器对象，Chrome驱动放在了Python一样的安装目录
-        driver = webdriver.Chrome(executable_path=address, chrome_options=chrome_options)
+        # driver = webdriver.Chrome(executable_path=address, chrome_options=chrome_options)
+        # driver = webdriver.Remote("http://172.17.0.3:4444/wd/hub", DesiredCapabilities.CHROME)
+        driver = webdriver.Remote(
+            command_executor="http://localhost:4444/wd/hub",
+            options=options,
+            desired_capabilities=DesiredCapabilities.CHROME
+        )
+        print(driver)
     except Exceptions.SessionNotCreatedException as e:
         print(f"error: {e}")
         raise
