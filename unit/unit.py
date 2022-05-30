@@ -19,18 +19,18 @@ def init_driver(address):
     # chrome_options.add_experimental_option('excludeSwitches',
     #                                        ['enable-automation'])
     options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
     options.add_argument('--ignore-ssl-errors=yes')
     options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--disable-gpu')
+    options.add_experimental_option('excludeSwitches',
+                                    ['enable-automation'])
 
     try:
         # 创建浏览器对象，Chrome驱动放在了Python一样的安装目录
         # driver = webdriver.Chrome(executable_path=address, chrome_options=chrome_options)
         # driver = webdriver.Remote("http://172.17.0.3:4444/wd/hub", DesiredCapabilities.CHROME)
-        driver = webdriver.Remote(
-            command_executor="http://localhost:4444/wd/hub",
-            options=options,
-            desired_capabilities=DesiredCapabilities.CHROME
-        )
+        driver = webdriver.Remote(options=options)
         print(driver)
     except Exceptions.SessionNotCreatedException as e:
         print(f"error: {e}")
