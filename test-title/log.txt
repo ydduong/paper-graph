@@ -1,0 +1,23 @@
+-----------------------------------------------------
+-----------------------------------------------------
+2022-05-30 09:11:07 --- Start bfs() ---
+2022-05-30 09:11:07 Title: 1-1, Prediction of protein solubility in E. coli
+2022-05-30 09:11:07 Build graph from title: Prediction of protein solubility in E. coli
+2022-05-30 09:13:27 Paper graph information: https://www.connectedpapers.com/main/e2a8312ec3fea3c88cb82526bbe62455918d7d3f/Prediction-of-protein-solubility-in-E.-coli/graph
+2022-05-30 09:13:54 Info: build finish(Prediction of protein solubility in E. coli)
+2022-05-30 09:13:54 Title: 2-1, Sequence-based prediction of protein solubility.
+2022-05-30 09:13:54 Build graph from title: Sequence-based prediction of protein solubility.
+2022-05-30 09:14:25 Paper graph information: https://www.connectedpapers.com/main/d594fccd6db4ef3d4d527d28d56ed54e9aa34ce0/Sequence%20based-prediction-of-protein-solubility./graph
+2022-05-30 09:14:44 Info: build finish(Sequence-based prediction of protein solubility.)
+2022-05-30 09:14:44 Title: 3-1, PROSO II – a new method for protein solubility prediction
+2022-05-30 09:14:44 Build graph from title: PROSO II – a new method for protein solubility prediction
+2022-05-30 09:15:09 Paper graph information: https://www.connectedpapers.com/main/94f4d0f130deca9625e0df18f02bb988903e0d4d/PROSO-II-%E2%80%93-a-new-method-for-protein-solubility-prediction/graph
+2022-05-30 09:15:26 Info: build finish(PROSO II – a new method for protein solubility prediction)
+2022-05-30 09:15:26 Title: 4-1, SOLpro: accurate sequence-based prediction of protein solubility
+2022-05-30 09:15:26 Build graph from title: SOLpro: accurate sequence-based prediction of protein solubility
+2022-05-30 09:15:47 Paper graph information: https://www.connectedpapers.com/main/fd4bbf7b7bbd990e692f9da01a9e1f7682d3362a/SOLpro%3A-accurate-sequence%20based-prediction-of-protein-solubility/graph
+2022-05-30 09:16:03 Info: build finish(SOLpro: accurate sequence-based prediction of protein solubility)
+2022-05-30 09:16:03 spider finish.
+2022-05-30 09:16:03 Starting write to excel.
+2022-05-30 09:16:03 Starting write to markdown.
+2022-05-30 09:16:03 Starting write to docx.
